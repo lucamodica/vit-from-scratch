@@ -200,4 +200,6 @@ if __name__ == "__main__":
   args = TrainingArgs(epochs=10, use_wandb=False)
   
   trainer = ModelTrainer(model, args, train_loader, val_loader)
-  trainer.train()
+  results = trainer.train()
+  
+  print("Training complete. Results:", results)
