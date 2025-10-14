@@ -14,7 +14,6 @@ from utils import save_model
 @dataclass
 class TrainingArgs:
   epochs: int = 5
-  batch_size: int = 32
   lr: float = 3e-4
   weight_decay: float = 1e-2
   device: str = "cuda" if t.cuda.is_available() else "cpu"
