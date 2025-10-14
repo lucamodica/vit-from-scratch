@@ -13,7 +13,7 @@ from utils import save_model
 
 @dataclass
 class TrainingArgs:
-  epochs: int = 5
+  n_epochs: int = 5
   lr: float = 3e-4
   weight_decay: float = 1e-2
   device: str = "cuda" if t.cuda.is_available() else "cpu"
@@ -129,10 +129,10 @@ class ModelTrainer:
     results["val_loss"].append(val_loss)
     results["val_acc"].append(val_acc)
     
-    for epoch in range(self.args.epochs):
+    for epoch in range(self.args.n_epochs):
       self.model.train()
       
-      pbar = tqdm(self.train_loader, desc=f"Epoch {epoch+1}/{self.args.epochs}")
+      pbar = tqdm(self.train_loader, desc=f"Epoch {epoch+1}/{self.args.n_epochs}")
       train_loss, train_acc = 0.0, 0.0
       
       for X, y in pbar:
