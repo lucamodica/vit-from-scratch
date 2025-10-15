@@ -102,8 +102,8 @@ class ModelTrainer:
     
     if self.args.use_wandb:
       wandb.log({"val/loss": val_loss, "val/accuracy": val_acc}, step=self.step)
-    else:
-      print(f"Validation: loss = {val_loss:.4f}, accuracy = {val_acc:.4f}")
+    
+    print(f"Validation: loss = {val_loss:.4f}, accuracy = {val_acc:.4f}")
     
     return val_loss, val_acc
   
@@ -128,6 +128,7 @@ class ModelTrainer:
     val_loss, val_acc = self.evaluate()  # eval before training to get baseline
     results["val_loss"].append(val_loss)
     results["val_acc"].append(val_acc)
+    print("-" * 50)
     
     for epoch in range(self.args.n_epochs):
       self.model.train()
@@ -146,6 +147,7 @@ class ModelTrainer:
       train_acc /= len(self.train_loader)
       results["train_loss"].append(train_loss)
       results["train_acc"].append(train_acc)
+      print(f"Training: loss = {train_loss:.4f}, accuracy = {train_acc:.4f}")
       
       val_loss, val_acc = self.evaluate()
       pbar.set_postfix(
@@ -153,6 +155,7 @@ class ModelTrainer:
       )
       results["val_loss"].append(val_loss)
       results["val_acc"].append(val_acc)
+      print("-" * 50)
       
     
     # save model

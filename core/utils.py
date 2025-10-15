@@ -5,6 +5,8 @@ from torch import nn
 import requests
 import zipfile
 import os
+from torchvision import transforms
+from PIL import Image
 import matplotlib.pyplot as plt
 
 def setup_working_directory() -> None:
@@ -102,17 +104,24 @@ def plot_loss_curves(results: Dict[str, List[float]]) -> None:
         results (dict): dictionary containing list of values, e.g.
             {"train_loss": [...],
              "train_acc": [...],
-             "test_loss": [...],
-             "test_acc": [...]}
+             "val_loss": [...],
+             "val_acc": [...]}
     """
-    
-    # Get the loss values of the results dictionary (training and test)
-    loss = results['train_loss']
-    test_loss = results['test_loss']
 
-    # Get the accuracy values of the results dictionary (training and test)
+    # Get the loss values of the results dictionary (training and validation)
+    loss = results['train_loss']
+    val_loss = results['val_loss']
+
+    # Get the accuracy values of the results dictionary (training and validation)
     accuracy = results['train_acc']
-    test_accuracy = results['test_acc']
+    val_accuracy = results['val_acc']
+    
+    # if the length of train and val array mismatch, that's
+    # because we evaluate before training to get a baseline
+    # take the values after the baseline in that case
+    if len(loss) != len(val_loss):
+        val_loss = val_loss[1:]
+        val_accuracy = val_accuracy[1:]
 
     # Figure out how many epochs there were
     epochs = range(len(results['train_loss']))
@@ -123,7 +132,7 @@ def plot_loss_curves(results: Dict[str, List[float]]) -> None:
     # Plot loss
     plt.subplot(1, 2, 1)
     plt.plot(epochs, loss, label='train_loss')
-    plt.plot(epochs, test_loss, label='test_loss')
+    plt.plot(epochs, val_loss, label='val_loss')
     plt.title('Loss')
     plt.xlabel('Epochs')
     plt.legend()
@@ -131,11 +140,56 @@ def plot_loss_curves(results: Dict[str, List[float]]) -> None:
     # Plot accuracy
     plt.subplot(1, 2, 2)
     plt.plot(epochs, accuracy, label='train_accuracy')
-    plt.plot(epochs, test_accuracy, label='test_accuracy')
+    plt.plot(epochs, val_accuracy, label='val_accuracy')
     plt.title('Accuracy')
     plt.xlabel('Epochs')
     plt.legend()
 
+def pred_and_plot_image(
+    model: nn.Module, 
+    img_path: Path, 
+    class_names: List[str],
+    transform: transforms.Compose = None,
+    img_size: int = (224, 224),
+    device="cpu"
+) -> None:
+    """Makes a prediction on a single image file and plots the image with the prediction.
+
+    Args:
+        model (nn.Module): A trained PyTorch model for making predictions.
+        img_path (Path): Path to a single image file.
+        class_names (List[str]): A list of class names for mapping labels to names.
+
+    Example usage:
+        pred_and_plot_image(model=model_0,
+                            img_path=Path("some_image.jpg"),
+                            class_names=class_names)
+    """
+    model = model.to(device)
+    model.eval()
+    
+    # Load in the image and convert to a tensor
+    img = Image.open(img_path).convert("RGB")
+    if not transform:
+        transform = transforms.Compose([
+            transforms.Resize(img_size),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], 
+                                 std=[0.229, 0.224, 0.225])
+        ])
+
+    with t.inference_mode():
+        # adjust image tensor dims
+        img_batch = transform(img).unsqueeze(0).to(device)
+        
+        preds = model(img_batch)
+        
+        # Move image back to cpu and denormalize for plotting
+        plt.imshow(img)
+        plt.title(f"Pred: {class_names[preds.argmax()]} | Prob: {t.softmax(preds, dim=1).max():.3f}")
+        plt.axis('off')
+        plt.show()
+        
 
 # test the utils functions
 if __name__ == "__main__":
