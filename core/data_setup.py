@@ -7,6 +7,7 @@ and loading data from various sources, mainly through DataLoader classes.
 import os
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
+import torch as t
 
 NUM_WORKERS = os.cpu_count() or 1
 
@@ -15,6 +16,7 @@ def create_dataloaders(
   test_dir: str,
   batch_size: int = 32,
   num_workers: int = NUM_WORKERS,
+  train_data_percent: float = 1.0,
   transforms: transforms.Compose = transforms.Compose([transforms.ToTensor()])
 ):
   """
@@ -34,6 +36,12 @@ def create_dataloaders(
   # get class names
   class_names = train_data.classes
   print(f"Class names: {class_names}")
+  
+  # optionally subsample the training data
+  if train_data_percent < 1.0:
+    num_train_samples = int(len(train_data) * train_data_percent)
+    train_data, _ = t.utils.data.random_split(train_data, [num_train_samples, len(train_data) - num_train_samples])
+    print(f"Subsampled training data to {num_train_samples} samples.")
   
   train_loader = DataLoader(
     dataset=train_data, 
